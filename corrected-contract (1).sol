@@ -482,7 +482,7 @@ contract Ownable {
         _owner = msg.sender;
     }
 
-    function owner() public view returns (address) {
+    function owner() external view returns (address) {
         return _owner;
     }
 
@@ -495,12 +495,12 @@ contract Ownable {
         return msg.sender == _owner;
     }
 
-    function renounceOwnership() public onlyOwner {
+    function renounceOwnership() external onlyOwner {
         emit OwnershipRenounced(_owner);
         _owner = address(0);
     }
 
-    function transferOwnership(address newOwner) public onlyOwner {
+    function transferOwnership(address newOwner) external onlyOwner {
         _transferOwnership(newOwner);
     }
 
@@ -526,15 +526,15 @@ abstract contract ERC20Detailed is IERC20 {
         _decimals = decimals_;
     }
 
-    function name() public view returns (string memory) {
+    function name() external view returns (string memory) {
         return _name;
     }
 
-    function symbol() public view returns (string memory) {
+    function symbol() external view returns (string memory) {
         return _symbol;
     }
 
-    function decimals() public view returns (uint8) {
+    function decimals() external view returns (uint8) {
         return _decimals;
     }
 }
@@ -584,10 +584,10 @@ contract MOVENS is ERC20Detailed, Ownable, ReentrancyGuard {
     uint256 public insuranceFundFee = 20;
     uint256 public blackHoleFee = 20;
 
-    uint256 public maxLiquidityFee = 100;
-    uint256 public maxTreasuryFee = 50;
-    uint256 public maxInsuranceFundFee = 100;
-    uint256 public maxBlackHoleFee = 50;
+    uint256 public constant maxLiquidityFee = 100;
+    uint256 public constant maxTreasuryFee = 50;
+    uint256 public constant maxInsuranceFundFee = 100;
+    uint256 public constant maxBlackHoleFee = 50;
 
     uint256 public constant feeDenominator = 1000;
 
@@ -626,13 +626,12 @@ contract MOVENS is ERC20Detailed, Ownable, ReentrancyGuard {
     mapping(address => uint256) private _gonBalances;
     mapping(address => mapping(address => uint256)) private _allowedFragments;
     mapping(address => bool) public blacklist;
-    
+
     event LiquidityFee(uint256 liquidityFee);
     event TreasuryFee(uint256 treasuryFee);
     event InsuranceFundFee(uint256 insuranceFundFee);
     event BlackHoleFee(uint256 blackHoleFee);
-    event changeCompoundingTime(uint256 compoundingTime);
-
+    event changeCompTime(uint256 compoundingTime);
 
     constructor() ERC20Detailed("MOVENS", "MVNS", uint8(DECIMALS)) Ownable() {
         router = IPancakeSwapRouter(0x10ED43C718714eb63d5aA57B78B54704E256024E);
@@ -712,8 +711,6 @@ contract MOVENS is ERC20Detailed, Ownable, ReentrancyGuard {
         _lastRebasedTime = _lastRebasedTime.add(deltaTime);
         emit LogRebase(epoch, _totalSupply);
         pairContract.sync();
-
-       
     }
 
     function transfer(address to, uint256 value)
@@ -844,8 +841,6 @@ contract MOVENS is ERC20Detailed, Ownable, ReentrancyGuard {
             block.timestamp
         );
 
-        
-
         if (amountToLiquify > 0 && amountETHLiquidity > 0) {
             router.addLiquidityETH{value: amountETHLiquidity}(
                 address(this),
@@ -856,7 +851,6 @@ contract MOVENS is ERC20Detailed, Ownable, ReentrancyGuard {
                 block.timestamp
             );
         }
-      
     }
 
     function swapBack() internal nonReentrant swapping {
@@ -1051,9 +1045,15 @@ contract MOVENS is ERC20Detailed, Ownable, ReentrancyGuard {
         address _insuranceFundReceiver,
         address _blackHole
     ) external onlyOwner {
-        require(_autoLiquidityReceiver != address(0), "_autoLiquidityReceiver is invalid");
+        require(
+            _autoLiquidityReceiver != address(0),
+            "_autoLiquidityReceiver is invalid"
+        );
         require(_treasuryReceiver != address(0), "treasuryReceiver is invalid");
-        require(_insuranceFundReceiver != address(0), "insuranceFundReceiver is invalid");
+        require(
+            _insuranceFundReceiver != address(0),
+            "insuranceFundReceiver is invalid"
+        );
         require(_blackHole != address(0), "blackHole is invalid");
         autoLiquidityReceiver = _autoLiquidityReceiver;
         treasuryReceiver = _treasuryReceiver;
@@ -1090,7 +1090,7 @@ contract MOVENS is ERC20Detailed, Ownable, ReentrancyGuard {
     }
 
     function setPairAddress(address _pairAddress) external onlyOwner {
-        require(_pairAddress != address(0),"pairAddress is invalid");
+        require(_pairAddress != address(0), "pairAddress is invalid");
         pairAddress = _pairAddress;
     }
 
@@ -1134,7 +1134,7 @@ contract MOVENS is ERC20Detailed, Ownable, ReentrancyGuard {
     function setBlackHoleFee(uint256 _blackHoleFee) external onlyOwner {
         require(_blackHoleFee <= maxBlackHoleFee, "Over max fee");
         blackHoleFee = _blackHoleFee;
-        emit setBlackHoleFee(blackHoleFee);
+        emit BlackHoleFee(blackHoleFee);
     }
 
     function changeCompoundingTime(uint256 _compoundingTime)
@@ -1142,7 +1142,7 @@ contract MOVENS is ERC20Detailed, Ownable, ReentrancyGuard {
         onlyOwner
     {
         compoundingTime = _compoundingTime;
-        emit changeCompoundingTime(compoundingTime);
+        emit changeCompTime(compoundingTime);
     }
 
     function isContract(address addr) internal view returns (bool) {
